@@ -1,0 +1,8 @@
+
+Name,Email,Age,City
+  John Doe  ,JOHN.doe@EXAMPLE.com,35,new york
+John Doe,john.doe@example.com,35,New York
+Jane Smith,jane.smith@company.com,  28  ,San Francisco
+jane smith,JANE.SMITH@COMPANY.COM,28,san francisco
+Bob Johnson,bob.johnson@test.com,42,Chicago
+  ,bob.johnson@test.com,42,Chicago
