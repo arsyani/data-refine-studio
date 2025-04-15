@@ -27,21 +27,30 @@ export function parseCSV(csvContent: string): { data: string[][], headers: strin
 
 /**
  * Remove duplicate rows from the data
+ * Improved to properly detect and remove exact duplicates
  */
 export function removeDuplicates(data: string[][]): { data: string[][], count: number } {
+  // Create a more robust signature for each row by normalizing whitespace and case
   const seen = new Set<string>();
-  const uniqueData = data.filter(row => {
-    const rowStr = JSON.stringify(row);
-    if (seen.has(rowStr)) {
-      return false;
+  const uniqueData: string[][] = [];
+  let duplicatesCount = 0;
+  
+  for (const row of data) {
+    // Create a normalized signature for comparison (trim and lowercase each cell)
+    const normalizedRow = row.map(cell => cell.trim().toLowerCase());
+    const rowSignature = JSON.stringify(normalizedRow);
+    
+    if (!seen.has(rowSignature)) {
+      seen.add(rowSignature);
+      uniqueData.push(row);
+    } else {
+      duplicatesCount++;
     }
-    seen.add(rowStr);
-    return true;
-  });
+  }
   
   return {
     data: uniqueData,
-    count: data.length - uniqueData.length
+    count: duplicatesCount
   };
 }
 
@@ -53,6 +62,7 @@ export function trimWhitespace(data: string[][]): { data: string[][], count: num
   
   const trimmedData = data.map(row => {
     return row.map(cell => {
+      if (!cell) return cell; // Skip null or undefined
       const trimmed = cell.trim();
       if (trimmed !== cell) {
         cellsFixed++;
@@ -83,16 +93,24 @@ export function standardizeCase(data: string[][], headers: string[]): string[][]
 }
 
 /**
- * Remove empty rows from the data (rows where all cells are empty)
+ * Remove empty rows from the data (rows where all cells are empty or just whitespace)
+ * Improved to better detect truly empty rows
  */
 export function removeEmptyRows(data: string[][]): { data: string[][], count: number } {
+  const originalLength = data.length;
+  
+  // A row is considered empty if all cells are empty strings or only whitespace
   const filteredData = data.filter(row => {
-    return row.some(cell => cell.trim() !== '');
+    // Check if at least one cell in the row has content after trimming
+    return row.some(cell => {
+      const trimmed = (cell || '').trim();
+      return trimmed !== '';
+    });
   });
   
   return {
     data: filteredData,
-    count: data.length - filteredData.length
+    count: originalLength - filteredData.length
   };
 }
 
