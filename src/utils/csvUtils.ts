@@ -5,8 +5,13 @@
 
 /**
  * Parse a CSV string into a 2D array of strings and extract headers
+ * Improved to detect and handle different delimiters (comma or semicolon)
  */
 export function parseCSV(csvContent: string): { data: string[][], headers: string[] } {
+  // Detect delimiter (comma or semicolon)
+  const firstLine = csvContent.split(/\r?\n/)[0] || '';
+  const delimiter = firstLine.includes(';') ? ';' : ',';
+  
   // Split the CSV content by newlines
   const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
   
@@ -15,11 +20,11 @@ export function parseCSV(csvContent: string): { data: string[][], headers: strin
   }
   
   // Extract headers from the first line
-  const headers = lines[0].split(',').map(header => header.trim());
+  const headers = lines[0].split(delimiter).map(header => header.trim());
   
   // Parse the data rows
   const data = lines.slice(1).map(line => {
-    return line.split(',').map(cell => cell.trim());
+    return line.split(delimiter).map(cell => cell.trim());
   });
   
   return { data, headers };
@@ -27,7 +32,7 @@ export function parseCSV(csvContent: string): { data: string[][], headers: strin
 
 /**
  * Remove duplicate rows from the data
- * Improved to properly detect and remove exact duplicates
+ * Improved to properly detect and remove exact duplicates based on all columns
  */
 export function removeDuplicates(data: string[][]): { data: string[][], count: number } {
   // Create a more robust signature for each row by normalizing whitespace and case
@@ -37,7 +42,7 @@ export function removeDuplicates(data: string[][]): { data: string[][], count: n
   
   for (const row of data) {
     // Create a normalized signature for comparison (trim and lowercase each cell)
-    const normalizedRow = row.map(cell => cell.trim().toLowerCase());
+    const normalizedRow = row.map(cell => (cell || '').trim().toLowerCase());
     const rowSignature = JSON.stringify(normalizedRow);
     
     if (!seen.has(rowSignature)) {
@@ -101,7 +106,7 @@ export function removeEmptyRows(data: string[][]): { data: string[][], count: nu
   
   // A row is considered empty if all cells are empty strings or only whitespace
   const filteredData = data.filter(row => {
-    // Check if at least one cell in the row has content after trimming
+    // Check if at least one cell in the row has non-empty content after trimming
     return row.some(cell => {
       const trimmed = (cell || '').trim();
       return trimmed !== '';
@@ -118,10 +123,13 @@ export function removeEmptyRows(data: string[][]): { data: string[][], count: nu
  * Download the cleaned CSV data as a file
  */
 export function downloadCleanedCSV(data: string[][], headers: string[], fileName: string): void {
+  // Detect the original delimiter from the fileName or default to comma
+  const delimiter = fileName.includes('semicolon') ? ';' : ',';
+  
   // Create CSV content
   const csvContent = [
-    headers.join(','),
-    ...data.map(row => row.join(','))
+    headers.join(delimiter),
+    ...data.map(row => row.join(delimiter))
   ].join('\n');
   
   // Create a Blob with the CSV content
